@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # McJoe a cafe — Frontend (MERN: the "R" in MERN)
 
 React + Vite frontend for the McJoe cafe web application.
@@ -30,3 +31,7 @@ All data access goes through `src/services/api.js`. It uses `localStorage` for n
 so CRUD works without a server. When Express/MongoDB is ready, replace each function
 body with a `fetch` call to your REST endpoints (`GET/POST/PUT/DELETE /api/menu`,
 `/api/orders`). No page or component needs to change.
+=======
+# Mcjonald
+This is a fastfood web application in collabortion with Jonald Rodulfo
+>>>>>>> f1a6af1513f584e81c19399b010845aa91525cb9
