@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import MenuCard from '../components/MenuCard.jsx';
 import { CATEGORIES } from '../data/seed.js';
 
-export default function Menu({ menu }) {
+export default function Menu({ menu, onSelect }) {
   const [cat, setCat] = useState('All');
   const [q, setQ] = useState('');
 
@@ -39,7 +39,9 @@ export default function Menu({ menu }) {
       </div>
 
       {shown.length ? (
-        <div className="grid">{shown.map((m) => <MenuCard key={m.id} item={m} />)}</div>
+        <div className="grid">
+          {shown.map((m) => <MenuCard key={m.id} item={m} onSelect={onSelect} />)}
+        </div>
       ) : (
         <div className="empty"><p>Nothing matches your search.</p></div>
       )}

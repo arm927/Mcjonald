@@ -1,175 +1,91 @@
-
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { peso } from '../components/MenuCard.jsx';
+import { CATEGORY_ICONS } from '../data/seed.js';
 
-export default function Cart({
-  cart,
-  menu,
-  onUpdateQty,
-  onRemove
-}) {
-  const lines = cart.map((line) => ({
-    ...line,
-    item: menu.find((m) => m.id === line.menuId),
-  })).filter((line) => line.item);
+export default function Cart({ cart, menu, onUpdateQty, onRemove, onCheckout }) {
+  const navigate = useNavigate();
+  const [customer, setCustomer] = useState('');
+  const [note, setNote] = useState('');
+  const [error, setError] = useState('');
 
-  const total = lines.reduce(
-    (sum, line) => sum + Number(line.item.price) * line.qty,
-    0
-  );
+  const lines = cart
+    .map((l) => ({ ...l, item: menu.find((m) => m.id === l.menuId) }))
+    .filter((l) => l.item);
+  const total = lines.reduce((s, l) => s + l.price * l.qty, 0);
+  const count = lines.reduce((s, l) => s + l.qty, 0);
 
-  const count = lines.reduce(
-    (sum, line) => sum + line.qty,
-    0
-  );
+  const placeOrder = async (e) => {
+    e.preventDefault();
+    if (!customer.trim()) return setError('Customer name is required');
+    await onCheckout({ customer: customer.trim(), note: note.trim() });
+    navigate('/orders');
+  };
 
   return (
     <section className="container page">
-
-      {/* Header */}
       <div className="section-head">
         <div>
           <h1>Your Cart</h1>
-          <p className="muted">
-            {count} {count === 1 ? 'item' : 'items'} in your cart.
-          </p>
+          <p className="muted">{count} {count === 1 ? 'item' : 'items'} in your cart.</p>
         </div>
-
-        <a className="btn btn-ghost" href="/menu">
-          Continue shopping
-        </a>
+        <Link className="btn btn-ghost" to="/menu">Add more items</Link>
       </div>
 
-      {/* Cart Items */}
-      {lines.length > 0 ? (
-        <>
+      {lines.length ? (
+        <div className="cart-layout">
           <div className="cart-list">
-
-            {lines.map(({ menuId, qty, item }) => (
-              <article className="card cart-item" key={menuId}>
-
-                <div className="cart-art">
-                  {({
-                    Coffee: '☕',
-                    'Non-Coffee': '🧋',
-                    Pastry: '🥐',
-                    Meals: '🥪'
-                  })[item.category] || '☕'}
-                </div>
-
+            {lines.map((l) => (
+              <article className="card cart-item" key={l.key}>
+                <div className="cart-art" aria-hidden="true">{CATEGORY_ICONS[l.item.category] || '☕'}</div>
                 <div className="cart-info">
-
                   <div className="cart-item-head">
                     <div>
-                      <h3>{item.name}</h3>
+                      <h3>{l.item.name}</h3>
                       <span className="muted small">
-                        {item.category}
+                        {[l.size, ...(l.addons || [])].filter(Boolean).join(' · ') || l.item.category}
                       </span>
+                      {l.note && <div className="note small">“{l.note}”</div>}
                     </div>
-
-                    <strong className="price">
-                      {peso(item.price)}
-                    </strong>
+                    <span className="price">{peso(l.price)}</span>
                   </div>
-
-                  <p className="muted small">
-                    {item.description}
-                  </p>
-
                   <div className="cart-item-actions">
-
-                    {/* Quantity Controls */}
                     <div className="quantity-control">
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onUpdateQty(menuId, qty - 1)
-                        }
-                      >
-                        −
-                      </button>
-
-                      <span>{qty}</span>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onUpdateQty(menuId, qty + 1)
-                        }
-                      >
-                        +
-                      </button>
-
+                      <button type="button" onClick={() => onUpdateQty(l.key, l.qty - 1)} aria-label="Decrease">−</button>
+                      <span>{l.qty}</span>
+                      <button type="button" onClick={() => onUpdateQty(l.key, l.qty + 1)} aria-label="Increase">+</button>
                     </div>
-
-                    {/* Item Subtotal */}
-                    <strong>
-                      {peso(item.price * qty)}
-                    </strong>
-
-                    {/* Remove Item */}
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-danger-ghost"
-                      onClick={() => onRemove(menuId)}
-                    >
-                      Remove
-                    </button>
-
+                    <strong>{peso(l.price * l.qty)}</strong>
+                    <button type="button" className="btn btn-sm btn-danger-ghost" onClick={() => onRemove(l.key)}>Remove</button>
                   </div>
                 </div>
               </article>
             ))}
-
           </div>
 
-          {/* Order Summary */}
-          <aside className="cart-summary">
-
-            <div>
-              <span>Subtotal</span>
-              <strong>{peso(total)}</strong>
-            </div>
-
-            <div>
-              <span>Total Items</span>
-              <strong>{count}</strong>
-            </div>
-
-            <div className="cart-total">
-              <span>Total</span>
-              <strong>{peso(total)}</strong>
-            </div>
-
-            <p className="muted small">
-              Review your items before proceeding.
-            </p>
-
-          </aside>
-        </>
-      ) : (
-
-        /* Empty Cart */
-        <div className="empty cart-empty">
-
-          <div className="cart-empty-icon">
-            🛒
-          </div>
-
-          <h2>Your cart is empty</h2>
-
-          <p>
-            Looks like you haven't added anything yet.
-          </p>
-
-          <a className="btn btn-primary" href="/menu">
-            Browse the Menu
-          </a>
-
+          <form className="card cart-summary" onSubmit={placeOrder} noValidate>
+            <h3>Order summary</h3>
+            <div className="sum-row"><span>Items</span><strong>{count}</strong></div>
+            <div className="sum-row cart-total"><span>Total</span><strong>{peso(total)}</strong></div>
+            <label>
+              Customer name
+              <input value={customer} onChange={(e) => { setCustomer(e.target.value); setError(''); }} placeholder="e.g. Ana Dela Cruz" />
+              {error && <span className="error">{error}</span>}
+            </label>
+            <label>
+              Note (optional)
+              <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. for here" />
+            </label>
+            <button type="submit" className="btn btn-primary">Place order</button>
+          </form>
         </div>
-
+      ) : (
+        <div className="empty">
+          <h2>Your cart is empty</h2>
+          <p>Pick something from the menu to get started.</p>
+          <Link className="btn btn-primary" to="/menu">Browse the menu</Link>
+        </div>
       )}
-
     </section>
   );
 }

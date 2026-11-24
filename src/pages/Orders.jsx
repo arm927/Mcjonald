@@ -5,7 +5,7 @@ import { peso } from '../components/MenuCard.jsx';
 import { ORDER_STATUSES } from '../data/seed.js';
 
 const orderTotal = (order, menu) =>
-  order.items.reduce((sum, line) => sum + (menu.find((m) => m.id === line.menuId)?.price || 0) * line.qty, 0);
+  order.items.reduce((sum, l) => sum + (l.price ?? menu.find((m) => m.id === l.menuId)?.price ?? 0) * l.qty, 0);
 
 function OrderForm({ initial, menu, onSubmit, onCancel }) {
   const [customer, setCustomer] = useState(initial?.customer || '');
@@ -26,7 +26,12 @@ function OrderForm({ initial, menu, onSubmit, onCancel }) {
     if (!valid.length) err.items = 'Add at least one item';
     setErrors(err);
     if (Object.keys(err).length) return;
-    onSubmit({ customer: customer.trim(), status, note: note.trim(), items: valid.map((l) => ({ menuId: l.menuId, qty: Number(l.qty) || 1 })) });
+    onSubmit({
+      customer: customer.trim(),
+      status,
+      note: note.trim(),
+      items: valid.map((l) => ({ ...l, qty: Number(l.qty) || 1 })),
+    });
   };
 
   return (
@@ -41,7 +46,11 @@ function OrderForm({ initial, menu, onSubmit, onCancel }) {
         <legend>Items</legend>
         {lines.map((l, i) => (
           <div className="line" key={i}>
-            <select value={l.menuId} onChange={(e) => setLine(i, { menuId: e.target.value })} aria-label="Menu item">
+            <select
+              value={l.menuId}
+              onChange={(e) => setLine(i, { menuId: e.target.value, price: undefined, size: undefined, addons: undefined })}
+              aria-label="Menu item"
+            >
               <option value="">Choose an item…</option>
               {menu.map((m) => (
                 <option key={m.id} value={m.id} disabled={!m.available && m.id !== l.menuId}>
@@ -135,8 +144,13 @@ export default function Orders({ orders, menu, onAdd, onEdit, onDelete }) {
                   const m = menu.find((x) => x.id === l.menuId);
                   return (
                     <li key={i}>
-                      <span>{l.qty} × {m ? m.name : <em>Removed item</em>}</span>
-                      <span>{peso((m?.price || 0) * l.qty)}</span>
+                      <span>
+                        {l.qty} × {m ? m.name : <em>Removed item</em>}
+                        {(l.size || l.addons?.length > 0) && (
+                          <small className="muted"> ({[l.size, ...(l.addons || [])].filter(Boolean).join(', ')})</small>
+                        )}
+                      </span>
+                      <span>{peso((l.price ?? m?.price ?? 0) * l.qty)}</span>
                     </li>
                   );
                 })}

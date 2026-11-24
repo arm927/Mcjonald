@@ -1,5 +1,11 @@
 export const CATEGORIES = ['Coffee', 'Non-Coffee', 'Pastry', 'Meals'];
 
+export const SIZES = [
+  { name: 'Small', extra: 0 },
+  { name: 'Medium', extra: 20 },
+  { name: 'Large', extra: 40 },
+];
+
 export const CATEGORY_ICONS = {
   Coffee: '☕',
   'Non-Coffee': '🧋',
@@ -7,6 +13,7 @@ export const CATEGORY_ICONS = {
   Meals: '🥪',
 };
 
+export const SIZED_CATEGORIES = ['Coffee', 'Non-Coffee'];
 export const ORDER_STATUSES = ['Pending', 'Preparing', 'Served', 'Cancelled'];
 
 export const seedMenu = [
@@ -24,3 +31,10 @@ export const seedOrders = [
   { id: 'o1', customer: 'Maria Santos', status: 'Preparing', note: 'Less ice please', createdAt: new Date().toISOString(), items: [{ menuId: 'm1', qty: 2 }, { menuId: 'm6', qty: 1 }] },
   { id: 'o2', customer: 'Carlo Reyes', status: 'Pending', note: '', createdAt: new Date().toISOString(), items: [{ menuId: 'm8', qty: 1 }, { menuId: 'm2', qty: 1 }] },
 ];
+
+export const ADDONS = {
+  Coffee: [{ name: 'Extra shot', price: 30 }, { name: 'Oat milk', price: 40 }, { name: 'Vanilla syrup', price: 20 }],
+  'Non-Coffee': [{ name: 'Oat milk', price: 40 }, { name: 'Whipped cream', price: 20 }],
+  Pastry: [{ name: 'Warm it up', price: 0 }],
+  Meals: [{ name: 'Extra cheese', price: 30 }, { name: 'Side fries', price: 60 }],
+};

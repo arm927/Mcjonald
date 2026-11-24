@@ -4,11 +4,12 @@ import { NavLink, Link } from 'react-router-dom';
 const links = [
   { to: '/', label: 'Home', end: true },
   { to: '/menu', label: 'Menu' },
+  { to: '/cart', label: 'Cart' },
   { to: '/orders', label: 'Orders' },
   { to: '/manage-menu', label: 'Manage Menu' },
 ];
 
-export default function Navbar() {
+export default function Navbar({ cartCount = 0 }) {
   const [open, setOpen] = useState(false);
   return (
     <header className="navbar">
@@ -31,6 +32,7 @@ export default function Navbar() {
           {links.map((l) => (
             <NavLink key={l.to} to={l.to} end={l.end} onClick={() => setOpen(false)}>
               {l.label}
+              {l.to === '/cart' && cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
             </NavLink>
           ))}
         </nav>
