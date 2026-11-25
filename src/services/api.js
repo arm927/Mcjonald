@@ -1,18 +1,10 @@
 /**
- * Data service layer.
- *
- * The backend (Express + MongoDB) is not built yet, so this file stores data in
- * the browser's localStorage. Every function is async and has the same shape a
- * real REST call would have. When the backend is ready, replace the bodies with
- * fetch/axios calls, e.g.:
- *
- *   export const getMenuItems = () => fetch(`${API_URL}/menu`).then(r => r.json());
- *
- * Nothing else in the app needs to change.
+ * Data service layer (localStorage for now).
+ * When the Express + MongoDB backend is ready, replace the bodies with fetch calls.
  */
-import { seedMenu, seedOrders } from '../data/seed.js';
+import { seedMenu, seedOrders, USERS } from '../data/seed.js';
 
-const KEYS = { menu: 'mcjoe_menu', orders: 'mcjoe_orders' };
+const KEYS = { menu: 'mcjoe_menu', orders: 'mcjoe_orders', users: 'mcjoe_users' };
 
 const read = (key, seed) => {
   try {
@@ -34,6 +26,36 @@ const write = (key, value) => {
 };
 
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+const sha256 = async (text) => {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+};
+
+/* ---------- Users ---------- */
+export const registerUser = async ({ name, username, password }) => {
+  const uname = username.trim().toLowerCase();
+  const users = read(KEYS.users, []);
+  if (USERS.some((u) => u.username === uname) || users.some((u) => u.username === uname)) {
+    throw new Error('That username is already taken');
+  }
+  const user = { username: uname, name: name.trim(), role: 'Customer', passwordHash: await sha256(password) };
+  write(KEYS.users, [...users, user]);
+  return { username: user.username, name: user.name, role: user.role };
+};
+
+export const loginUser = async (username, password) => {
+  const uname = username.trim().toLowerCase();
+
+  // built-in staff accounts
+  const staff = USERS.find((u) => u.username === uname && u.password === password);
+  if (staff) return { username: staff.username, name: staff.name, role: staff.role };
+
+  // accounts created on the Sign up page
+  const hash = await sha256(password);
+  const found = read(KEYS.users, []).find((u) => u.username === uname && u.passwordHash === hash);
+  return found ? { username: found.username, name: found.name, role: found.role } : null;
+};
 
 /* ---------- Menu items ---------- */
 export const getMenuItems = async () => read(KEYS.menu, seedMenu);
