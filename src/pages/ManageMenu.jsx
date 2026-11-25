@@ -58,7 +58,7 @@ function MenuForm({ initial, onSubmit, onCancel }) {
 }
 
 export default function ManageMenu({ menu, onAdd, onEdit, onDelete }) {
-  const [editing, setEditing] = useState(null); // null | 'new' | item
+  const [editing, setEditing] = useState(null); 
   const [deleting, setDeleting] = useState(null);
   const [q, setQ] = useState('');
 
