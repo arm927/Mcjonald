@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
 import Toast from './components/Toast.jsx';
@@ -9,8 +9,29 @@ import Menu from './pages/Menu.jsx';
 import Cart from './pages/cart.jsx';
 import ManageMenu from './pages/ManageMenu.jsx';
 import Orders from './pages/Orders.jsx';
+import Login from './pages/Login.jsx';
+import Signup from './pages/Signup.jsx';
 import NotFound from './pages/NotFound.jsx';
 import * as api from './services/api.js';
+
+const STAFF_ROLES = ['Admin', 'Staff'];
+
+function RequireStaff({ user, children }) {
+  const location = useLocation();
+  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (!STAFF_ROLES.includes(user.role)) {
+    return (
+      <section className="container page">
+        <div className="empty">
+          <h2>Staff only</h2>
+          <p>Your account doesn’t have access to this page.</p>
+          <Link className="btn btn-primary" to="/menu">Back to the menu</Link>
+        </div>
+      </section>
+    );
+  }
+  return children;
+}
 
 export default function App() {
   const [menu, setMenu] = useState([]);
@@ -20,6 +41,9 @@ export default function App() {
   const [selected, setSelected] = useState(null);
   const [cart, setCart] = useState(() => {
     try { return JSON.parse(localStorage.getItem('mcjoe_cart')) || []; } catch { return []; }
+  });
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('mcjoe_user')) || null; } catch { return null; }
   });
 
   const notify = useCallback((message, type = 'ok') => {
@@ -37,6 +61,28 @@ export default function App() {
   useEffect(() => {
     try { localStorage.setItem('mcjoe_cart', JSON.stringify(cart)); } catch { /* ignore */ }
   }, [cart]);
+
+  /* ---- auth ---- */
+  const startSession = (safe) => {
+    setUser(safe);
+    try { localStorage.setItem('mcjoe_user', JSON.stringify(safe)); } catch { /* ignore */ }
+    notify(`Welcome, ${safe.name}!`);
+  };
+  const login = async (username, password) => {
+    const safe = await api.loginUser(username, password);
+    if (!safe) return false;
+    startSession(safe);
+    return true;
+  };
+  const signup = async (data) => {
+    const safe = await api.registerUser(data); // throws if username is taken
+    startSession(safe);
+  };
+  const logout = () => {
+    setUser(null);
+    try { localStorage.removeItem('mcjoe_user'); } catch { /* ignore */ }
+    notify('Logged out');
+  };
 
   /* ---- cart ---- */
   const cartCount = cart.reduce((s, l) => s + l.qty, 0);
@@ -103,7 +149,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <Navbar cartCount={cartCount} />
+      <Navbar cartCount={cartCount} user={user} onLogout={logout} />
       <main>
         {loading ? (
           <p className="loading">Brewing…</p>
@@ -113,15 +159,25 @@ export default function App() {
             <Route path="/menu" element={<Menu menu={menu} onSelect={setSelected} />} />
             <Route
               path="/cart"
-              element={<Cart cart={cart} menu={menu} onUpdateQty={updateQty} onRemove={removeLine} onCheckout={checkout} />}
+              element={<Cart cart={cart} menu={menu} user={user} onUpdateQty={updateQty} onRemove={removeLine} onCheckout={checkout} />}
             />
+            <Route path="/login" element={<Login user={user} onLogin={login} />} />
+            <Route path="/signup" element={<Signup user={user} onSignup={signup} />} />
             <Route
               path="/manage-menu"
-              element={<ManageMenu menu={menu} onAdd={addMenuItem} onEdit={editMenuItem} onDelete={removeMenuItem} />}
+              element={
+                <RequireStaff user={user}>
+                  <ManageMenu menu={menu} onAdd={addMenuItem} onEdit={editMenuItem} onDelete={removeMenuItem} />
+                </RequireStaff>
+              }
             />
             <Route
               path="/orders"
-              element={<Orders orders={orders} menu={menu} onAdd={addOrder} onEdit={editOrder} onDelete={removeOrder} />}
+              element={
+                <RequireStaff user={user}>
+                  <Orders orders={orders} menu={menu} onAdd={addOrder} onEdit={editOrder} onDelete={removeOrder} />
+                </RequireStaff>
+              }
             />
             <Route path="*" element={<NotFound />} />
           </Routes>

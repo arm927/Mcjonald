@@ -38,3 +38,8 @@ export const ADDONS = {
   Pastry: [{ name: 'Warm it up', price: 0 }],
   Meals: [{ name: 'Extra cheese', price: 30 }, { name: 'Side fries', price: 60 }],
 };
+
+export const USERS = [
+  { username: 'admin', password: 'admin123', name: 'Admin', role: 'Admin' },
+  { username: 'staff', password: 'staff123', name: 'Staff', role: 'Staff' },
+];

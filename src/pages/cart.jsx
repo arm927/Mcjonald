@@ -3,9 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { peso } from '../components/MenuCard.jsx';
 import { CATEGORY_ICONS } from '../data/seed.js';
 
-export default function Cart({ cart, menu, onUpdateQty, onRemove, onCheckout }) {
+export default function Cart({ cart, menu, user, onUpdateQty, onRemove, onCheckout }) {
   const navigate = useNavigate();
-  const [customer, setCustomer] = useState('');
+  const [customer, setCustomer] = useState(user?.name || '');
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
 
